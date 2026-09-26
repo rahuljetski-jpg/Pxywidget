@@ -1,0 +1,54 @@
+name: Build OxyWidgets Final APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # Allows manual trigger anytime from the Actions tab
+
+jobs:
+  build:
+    name: Compile Android APK and Play Store Bundle
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository source code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Java 17 (Required for modern Android Gradle builds)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      # Step 3: Grant executable rights to the Gradle wrapper
+      - name: Make Gradle Wrapper Executable
+        run: chmod +x gradlew
+
+      # Step 4: Build the installable Debug APK
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      # Step 5: Build the Play Store Release Bundle (AAB)
+      - name: Build Release Bundle (AAB)
+        run: ./gradlew bundleRelease --stacktrace
+
+      # Step 6: Upload the installable APK as a downloadable artifact
+      - name: Upload Final Installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: OxyWidgets-v1.0.0-Final-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+      # Step 7: Upload the Play Store AAB Bundle as an artifact
+      - name: Upload Play Store AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: OxyWidgets-v1.0.0-PlayStore-AAB
+          path: app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
